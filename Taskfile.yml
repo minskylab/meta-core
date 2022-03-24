@@ -1,0 +1,18 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  generate:
+    cmds:
+      - go generate ./...
+
+  temp-build:
+    cmds:
+      # - go fmt cmd
+      - go build -v -o /tmp/meta
+
+  start:
+    deps: [temp-build]
+    cmds:
+      - /tmp/meta
