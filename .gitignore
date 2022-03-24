@@ -16,4 +16,5 @@
 .dccache
 .vscode
 
+.idea/
 .env
