@@ -71,25 +71,30 @@ func StartNewProcess(ctx context.Context, dbClient *ent.Client, conf *config.Con
 
 	process, err = database.UpdateProcessState(ctx, dbClient, proto.Id, processstate.DEPLOYING)
 	if err != nil {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 		return nil, err
 	}
 
 	process, err = database.AddStackToProcess(ctx, dbClient, proto.Id, stack)
 	if err != nil {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 		return nil, err
 	}
-
-	log.Debugln("MEOW5")
 
 	client, err := ConnectRemote(conf, &stack.Instance, &stack.KeyPair, "ubuntu")
 	if err != nil {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 		return nil, err
 	}
-
-	log.Debugln("MEOW6")
 
 	time.Sleep(30 * time.Second)
 
@@ -119,35 +124,42 @@ func StartNewProcess(ctx context.Context, dbClient *ent.Client, conf *config.Con
 		Credentials:          process.Definition.Credentials,
 	}
 
-	log.Debugln("MEOW7")
-
 	workerB64InputContext, err := InputContextToB64(workerInputContext)
 	if err != nil {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 		return nil, err
 	}
-
-	log.Debugln("MEOW8")
 
 	workerImageName := "jmacazana/worker:latest"
 	rCmd := fmt.Sprintf("\nsudo docker run -e INPUT_DATA_B64=%s -v /var/run/docker.sock:/var/run/docker.sock -d %s python -u main.py\n", workerB64InputContext, workerImageName)
 
 	ExecuteRemote(conf, client, rCmd)
 
-	log.Debugln("MEOW9")
-
 	process, err = database.UpdateProcessState(ctx, dbClient, process.Id, processstate.RUNNING)
 	if err != nil {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
-		client.Close()
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
+		err2 = client.Close()
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 		return nil, err
 	}
-	client.Close()
-
-	log.Debugln("MEOW10")
+	err = client.Close()
+	if err != nil {
+		log.Errorln(err)
+	}
 
 	if sync {
-		PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		err2 := PurgeStack(ctx, dbClient, conf, ec2Client, stack.Id)
+		if err2 != nil {
+			log.Errorln(err2)
+		}
 	}
 	return process, nil
 }
@@ -158,11 +170,11 @@ func PurgeStack(ctx context.Context, dbClient *ent.Client, config *config.Config
 		return err
 	}
 
-	err = TerminateInstance(config, ec2Client, stack.Instance.Id)
+	err = DeleteSecurityGroup(config, ec2Client, stack.SecurityGroup.Id)
 	if err != nil {
 		return err
 	}
-	err = DeleteSecurityGroup(config, ec2Client, stack.SecurityGroup.Id)
+	err = TerminateInstance(config, ec2Client, stack.Instance.Id)
 	if err != nil {
 		return err
 	}

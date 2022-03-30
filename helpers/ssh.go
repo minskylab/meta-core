@@ -19,8 +19,6 @@ func ConnectRemote(conf *config.Config, instance *structures.EC2Instance, keyPai
 		return nil, err
 	}
 
-	log.Debugln("MEOW")
-
 	return client, nil
 }
 

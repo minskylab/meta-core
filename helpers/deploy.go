@@ -31,23 +31,28 @@ func DeployResourceStack(conf *config.Config, ec2Client *ec2.EC2, definition str
 		log.Debug(fmt.Sprintf("-->  instance_name=%s", instanceName))
 	}
 
+	vpcId, subnetId, err := GetNetworkResources(ec2Client)
+	if err != nil {
+		log.Errorln(err)
+		return nil, err
+	}
+
 	keyPair, err := CreateKeyPair(ec2Client, keyPairName, true)
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
 	}
 
-	instance, err := CreateEC2Instance(ec2Client, instanceName, definition.AmiId, keyPairName, definition.InstanceType, GetDefaultUserdata())
+	secGroup, err := CreateSecurityGroup(ec2Client, groupName, *vpcId)
 	if err != nil {
 		_ = DeleteKeyPair(conf, ec2Client, keyPair.Name, keyPair.Id)
 		log.Errorln(err)
 		return nil, err
 	}
 
-	secGroup, err := CreateSecurityGroup(ec2Client, groupName, instance.VpcId)
+	instance, err := CreateEC2Instance(ec2Client, instanceName, definition.AmiId, keyPairName, definition.InstanceType, secGroup.Id, *subnetId, GetDefaultUserdata())
 	if err != nil {
 		_ = DeleteKeyPair(conf, ec2Client, keyPair.Name, keyPair.Id)
-		_ = TerminateInstance(conf, ec2Client, instance.Id)
 		log.Errorln(err)
 		return nil, err
 	}

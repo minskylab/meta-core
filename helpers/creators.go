@@ -44,13 +44,15 @@ func GetDefaultUserdata() string {
 	return fmt.Sprintf("#!/usr/bin/env bash\nsudo apt update && sudo apt install -y docker.io")
 }
 
-func CreateEC2Instance(ec2Client *ec2.EC2, name, imageId, keyPairName, instanceType, userdata string) (*structures.EC2Instance, error) {
+func CreateEC2Instance(ec2Client *ec2.EC2, name, imageId, keyPairName, instanceType, securityGroupId, subnetId, userdata string) (*structures.EC2Instance, error) {
 	instances, err := ec2Client.RunInstances(&ec2.RunInstancesInput{
-		ImageId:      &imageId,
-		InstanceType: &instanceType,
-		KeyName:      &keyPairName,
-		MaxCount:     aws.Int64(1),
-		MinCount:     aws.Int64(1),
+		ImageId:          &imageId,
+		InstanceType:     &instanceType,
+		KeyName:          &keyPairName,
+		SecurityGroupIds: []*string{&securityGroupId},
+		SubnetId:         &subnetId,
+		MaxCount:         aws.Int64(1),
+		MinCount:         aws.Int64(1),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
