@@ -33,7 +33,7 @@ func ExecuteRemote(conf *config.Config, client *ssh.Client, cmd string) string {
 	}
 
 	if conf.Debug {
-		log.Debugln("output: ", out)
+		log.Debugln("output: ", string(out))
 	}
 	// the 'out' is stdout output
 	return string(out)
