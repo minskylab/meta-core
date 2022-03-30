@@ -106,10 +106,10 @@ func StartNewProcess(ctx context.Context, dbClient *ent.Client, conf *config.Con
 
 	var tasks []structures.DockerTask
 
-	tasks = append(tasks, config.DozzleTask.ToDockerTask(), config.NetdataTask.ToDockerTask())
+	tasks = append(tasks, config.DozzleTask.CompleteDefaults().ToDockerTask(), config.NetdataTask.CompleteDefaults().ToDockerTask())
 
 	for _, task := range process.Definition.Tasks {
-		tasks = append(tasks, task.ToDockerTask())
+		tasks = append(tasks, task.CompleteDefaults().ToDockerTask())
 	}
 
 	workerInputContext := structures.InputContext{

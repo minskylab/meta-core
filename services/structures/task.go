@@ -33,3 +33,16 @@ func (task TaskDescription) ToDockerTask() DockerTask {
 		CapAdd:      task.CapAdd,
 	}
 }
+
+func (task TaskDescription) CompleteDefaults() TaskDescription {
+	if task.Environment == nil {
+		task.Environment = map[string]interface{}{}
+	}
+	if task.Volumes == nil {
+		task.Volumes = []string{}
+	}
+	if task.Ports == nil {
+		task.Ports = []string{}
+	}
+	return task
+}

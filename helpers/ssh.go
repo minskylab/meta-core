@@ -23,6 +23,7 @@ func ConnectRemote(conf *config.Config, instance *structures.EC2Instance, keyPai
 }
 
 func ExecuteRemote(conf *config.Config, client *ssh.Client, cmd string) string {
+	log.Debugln(cmd)
 	out, err := client.Cmd(cmd).SmartOutput()
 	if err != nil {
 		// the 'out' is stderr output
